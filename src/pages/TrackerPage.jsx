@@ -40,7 +40,7 @@ function Field({ label, children }) {
 const inputCss = { width: '100%', padding: '9px 12px', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border-strong)', borderRadius: 8, fontSize: 13, color: 'var(--text)', outline: 'none' }
 const selectCss = { width: '100%', padding: '9px 12px', background: 'var(--bg)', border: '1px solid var(--border-strong)', borderRadius: 8, fontSize: 13, color: 'var(--text)', outline: 'none' }
 
-function AppForm({ initial, onSave, onCancel, loading, userDocs }) {
+function AppForm({ initial, onSave, onCancel, loading, userDocs, pastTags = [] }) {
   const [form, setForm] = useState(initial ? {
     ...initial,
     tags: Array.isArray(initial.tags) ? initial.tags.join(', ') : (initial.tags || ''),
@@ -82,7 +82,7 @@ function AppForm({ initial, onSave, onCancel, loading, userDocs }) {
         <Field label="Job posting URL"><input type="url" value={form.job_url} onChange={e => set('job_url', e.target.value)} placeholder="https://..." style={inputCss} /></Field>
         <Field label="Contact (recruiter/HM)"><input value={form.contact} onChange={e => set('contact', e.target.value)} placeholder="Name or LinkedIn URL" style={inputCss} /></Field>
         <div style={{ gridColumn: '1 / -1' }}>
-          <TagInput value={Array.isArray(form.tags) ? form.tags : (form.tags ? form.tags.split(',').map(t=>t.trim()).filter(Boolean) : [])} onChange={tags => set('tags', tags)} />
+          <TagInput value={Array.isArray(form.tags) ? form.tags : (form.tags ? form.tags.split(',').map(t=>t.trim()).filter(Boolean) : [])} onChange={tags => set('tags', tags)} pastTags={pastTags} />
         </div>
         <Field label="Resume used">
           <select value={form.resume_label} onChange={e => set('resume_label', e.target.value)} style={selectCss}>
@@ -173,11 +173,20 @@ export default function TrackerPage() {
   const [noteModal, setNoteModal] = useState(null)
   const [exportMsg, setExportMsg] = useState('')
   const [userDocs, setUserDocs] = useState([])
+  const [pastTags, setPastTags] = useState([])
 
   useEffect(() => {
     if (user) {
       load()
       getDocsByCategory(user.id, ['Resume', 'Cover Letter']).then(({ data }) => setUserDocs(data || []))
+      // Fetch past tags for TagInput
+      import('../lib/supabase').then(({ supabase }) => {
+        supabase.from('applications').select('tags').eq('user_id', user.id).then(({ data }) => {
+          const all = (data || []).flatMap(a => Array.isArray(a.tags) ? a.tags : [])
+          const unique = [...new Set(all)].filter(Boolean)
+          setPastTags(unique)
+        })
+      })
     }
   }, [user])
 
@@ -304,7 +313,7 @@ export default function TrackerPage() {
       {showForm && (
         <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 14, padding: '1.5rem', marginBottom: '1.5rem' }}>
           <div style={{ fontSize: 14, fontWeight: 500, marginBottom: '1.25rem' }}>{editing ? 'Edit application' : 'New application'}</div>
-          <AppForm initial={editing || undefined} onSave={handleSave} onCancel={() => { setShowForm(false); setEditing(null) }} loading={saving} userDocs={userDocs} />
+          <AppForm initial={editing || undefined} onSave={handleSave} onCancel={() => { setShowForm(false); setEditing(null) }} loading={saving} userDocs={userDocs} pastTags={pastTags} />
         </div>
       )}
 

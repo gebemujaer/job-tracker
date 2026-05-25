@@ -1,6 +1,4 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { supabase } from '../lib/supabase'
-import { useAuth } from '../lib/AuthContext'
 
 const SUGGESTED_TAGS = [
   { group: 'Audience gaps', tags: ['dev-audience', 'technical-buyers', 'enterprise-buyers', 'smb-buyers', 'c-suite-buyers'] },
@@ -12,29 +10,19 @@ const SUGGESTED_TAGS = [
 ]
 
 const ALL_SUGGESTED = SUGGESTED_TAGS.flatMap(g => g.tags)
+const STRENGTH_TAGS = SUGGESTED_TAGS.find(g => g.group === 'Strengths')?.tags || []
 
-export default function TagInput({ value = [], onChange }) {
-  const { user } = useAuth()
+export default function TagInput({ value = [], onChange, pastTags = [] }) {
   const [input, setInput] = useState('')
   const [showDropdown, setShowDropdown] = useState(false)
-  const [pastTags, setPastTags] = useState([])
   const [showGuide, setShowGuide] = useState(false)
   const inputRef = useRef()
   const dropdownRef = useRef()
 
   useEffect(() => {
-    if (user) {
-      supabase.from('applications').select('tags').eq('user_id', user.id).then(({ data }) => {
-        const all = (data || []).flatMap(a => Array.isArray(a.tags) ? a.tags : [])
-        const unique = [...new Set(all)].filter(t => t && !ALL_SUGGESTED.includes(t))
-        setPastTags(unique)
-      })
-    }
-  }, [user])
-
-  useEffect(() => {
     const handleClick = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target) && !inputRef.current?.contains(e.target)) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target) &&
+          inputRef.current && !inputRef.current.contains(e.target)) {
         setShowDropdown(false)
       }
     }
@@ -60,73 +48,74 @@ export default function TagInput({ value = [], onChange }) {
     if (e.key === 'Backspace' && !input && value.length > 0) {
       removeTag(value[value.length - 1])
     }
+    if (e.key === 'Escape') setShowDropdown(false)
   }
 
   const filtered = input
     ? [...ALL_SUGGESTED, ...pastTags].filter(t => t.includes(input.toLowerCase()) && !value.includes(t))
     : []
 
-  const unusedSuggested = ALL_SUGGESTED.filter(t => !value.includes(t))
   const unusedPast = pastTags.filter(t => !value.includes(t))
 
   return (
     <div>
-      {/* Label row */}
+      {/* Label */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-        <label style={{ fontSize: 11, fontWeight: 500, color: 'var(--text-secondary)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-          Gap tags
-        </label>
+        <label style={{ fontSize: 11, fontWeight: 500, color: 'var(--text-secondary)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Gap tags</label>
         <button type="button" onClick={() => setShowGuide(!showGuide)}
           style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '50%', width: 16, height: 16, fontSize: 10, color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
           ?
         </button>
       </div>
 
-      {/* Guide tooltip */}
+      {/* Guide */}
       {showGuide && (
         <div style={{ background: 'var(--bg-hover)', border: '1px solid var(--border)', borderRadius: 10, padding: '12px 14px', marginBottom: 10, fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.7 }}>
           <div style={{ fontWeight: 500, color: 'var(--text)', marginBottom: 6 }}>What are gap tags?</div>
-          Tags are short labels for gaps or risks you notice in a job description. They power the Gap Analysis on your dashboard — showing which gaps appear most often and which correlate with rejections.
+          Short labels for gaps or risks you notice in a job description. They power the Gap Analysis on your dashboard — showing which gaps appear most often and which correlate with rejections.
           <br /><br />
-          <div style={{ fontWeight: 500, color: 'var(--text)', marginBottom: 4 }}>How to use:</div>
-          <div>• Click any suggested tag below to add it</div>
+          <div>• Click any suggested tag to add it</div>
           <div>• Type your own and press Enter or comma</div>
-          <div>• Use <span style={{ color: 'var(--danger)' }}>gap tags</span> for weaknesses (e.g. <code style={{ background: 'var(--bg-card)', padding: '1px 4px', borderRadius: 3 }}>dev-audience</code>)</div>
-          <div>• Use <span style={{ color: 'var(--success)' }}>strength tags</span> for advantages (e.g. <code style={{ background: 'var(--bg-card)', padding: '1px 4px', borderRadius: 3 }}>sea-market</code>)</div>
-          <br />
-          <div style={{ color: 'var(--text-muted)', fontSize: 11 }}>After 5+ applications, your dashboard will show which tags correlate with interviews vs rejections.</div>
+          <div>• <span style={{ color: 'var(--danger)' }}>Gap tags</span> = weaknesses (e.g. <code style={{ background: 'var(--bg-card)', padding: '1px 4px', borderRadius: 3 }}>dev-audience</code>)</div>
+          <div>• <span style={{ color: 'var(--success)' }}>Strength tags</span> = advantages (e.g. <code style={{ background: 'var(--bg-card)', padding: '1px 4px', borderRadius: 3 }}>sea-market</code>)</div>
+          <div style={{ color: 'var(--text-muted)', fontSize: 11, marginTop: 6 }}>After 3+ apps, your dashboard shows which tags correlate with interviews vs rejections.</div>
         </div>
       )}
 
-      {/* Tag input box */}
+      {/* Input box */}
       <div style={{ minHeight: 42, padding: '6px 10px', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border-strong)', borderRadius: 8, display: 'flex', flexWrap: 'wrap', gap: 5, alignItems: 'center', cursor: 'text' }}
         onClick={() => { inputRef.current?.focus(); setShowDropdown(true) }}>
         {value.map(tag => {
-          const isStrength = SUGGESTED_TAGS.find(g => g.group === 'Strengths')?.tags.includes(tag)
+          const isStrength = STRENGTH_TAGS.includes(tag)
           return (
             <span key={tag} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 20, fontSize: 11, fontWeight: 500, background: isStrength ? 'var(--success-dim)' : 'var(--accent-dim)', color: isStrength ? 'var(--success)' : 'var(--accent)', border: `1px solid ${isStrength ? 'rgba(74,222,128,0.2)' : 'rgba(212,245,122,0.2)'}` }}>
               {tag}
               <button type="button" onClick={(e) => { e.stopPropagation(); removeTag(tag) }}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', fontSize: 12, lineHeight: 1, padding: 0, opacity: 0.7 }}>×</button>
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', fontSize: 13, lineHeight: 1, padding: 0, opacity: 0.7 }}>×</button>
             </span>
           )
         })}
-        <input ref={inputRef} value={input} onChange={e => { setInput(e.target.value); setShowDropdown(true) }}
-          onKeyDown={handleKeyDown} onFocus={() => setShowDropdown(true)}
+        <input ref={inputRef} value={input}
+          onChange={e => { setInput(e.target.value); setShowDropdown(true) }}
+          onKeyDown={handleKeyDown}
+          onFocus={() => setShowDropdown(true)}
           placeholder={value.length === 0 ? 'Click to add tags or type your own…' : ''}
           style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: 13, color: 'var(--text)', minWidth: 120, flex: 1 }} />
       </div>
 
       {/* Dropdown */}
       {showDropdown && (
-        <div ref={dropdownRef} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-strong)', borderRadius: 10, marginTop: 4, maxHeight: 320, overflowY: 'auto', zIndex: 50, position: 'relative' }}>
+        <div ref={dropdownRef} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-strong)', borderRadius: 10, marginTop: 4, maxHeight: 300, overflowY: 'auto', position: 'relative', zIndex: 99 }}>
+
           {/* Search results */}
-          {input && filtered.length > 0 && (
+          {input && (
             <div style={{ padding: '8px 12px', borderBottom: '1px solid var(--border)' }}>
               <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 6, letterSpacing: '0.06em' }}>MATCHES</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-                {filtered.map(t => <TagChip key={t} tag={t} onClick={() => addTag(t)} />)}
-                <TagChip tag={`+ "${input}"`} onClick={() => addTag(input)} custom />
+                {filtered.map(t => <TagChip key={t} tag={t} onClick={() => addTag(t)} strength={STRENGTH_TAGS.includes(t)} />)}
+                {!value.includes(input.trim().toLowerCase()) && (
+                  <TagChip tag={`+ add "${input}"`} onClick={() => addTag(input)} custom />
+                )}
               </div>
             </div>
           )}
@@ -141,7 +130,7 @@ export default function TagInput({ value = [], onChange }) {
             </div>
           )}
 
-          {/* Suggested by group */}
+          {/* Suggested groups */}
           {!input && SUGGESTED_TAGS.map(group => {
             const available = group.tags.filter(t => !value.includes(t))
             if (available.length === 0) return null
@@ -158,11 +147,9 @@ export default function TagInput({ value = [], onChange }) {
             )
           })}
 
-          {!input && (
-            <div style={{ padding: '8px 12px' }}>
-              <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Or type your own tag and press Enter</div>
-            </div>
-          )}
+          <div style={{ padding: '8px 12px' }}>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Type your own tag and press Enter</div>
+          </div>
         </div>
       )}
     </div>
@@ -175,10 +162,13 @@ function TagChip({ tag, onClick, strength, custom }) {
     <button type="button" onClick={onClick}
       onMouseOver={() => setHover(true)} onMouseOut={() => setHover(false)}
       style={{
-        padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 500, cursor: 'pointer', border: 'none',
-        background: hover ? (strength ? 'var(--success)' : custom ? 'var(--info)' : 'var(--accent)') : (strength ? 'var(--success-dim)' : custom ? 'var(--info-dim)' : 'var(--accent-dim)'),
-        color: hover ? 'var(--accent-text)' : (strength ? 'var(--success)' : custom ? 'var(--info)' : 'var(--accent)'),
-        transition: 'all 0.15s',
+        padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 500,
+        cursor: 'pointer', border: 'none', transition: 'all 0.15s',
+        background: hover
+          ? (strength ? 'var(--success)' : custom ? 'var(--info)' : 'var(--accent)')
+          : (strength ? 'var(--success-dim)' : custom ? 'var(--info-dim)' : 'var(--accent-dim)'),
+        color: hover ? 'var(--accent-text)'
+          : (strength ? 'var(--success)' : custom ? 'var(--info)' : 'var(--accent)'),
       }}>
       {tag}
     </button>
