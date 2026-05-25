@@ -3,28 +3,31 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-export const supabase = createClient(supabaseUrl, supabaseKey)
+export const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: { persistSession: true, storageKey: 'job-tracker-auth' }
+})
 
-// Auth helpers
+// Auth
 export const signUp = (email, password, name) =>
   supabase.auth.signUp({ email, password, options: { data: { name } } })
 
-export const signIn = (email, password) =>
+export const signIn = (email, password, remember) =>
   supabase.auth.signInWithPassword({ email, password })
 
 export const signOut = () => supabase.auth.signOut()
 
-export const getUser = () => supabase.auth.getUser()
-
 // Applications
 export const getApplications = (userId) =>
+  supabase.from('applications').select('*').eq('user_id', userId).order('created_at', { ascending: false })
+
+export const getPartnerApplications = (userId) =>
   supabase.from('applications').select('*').eq('user_id', userId).order('created_at', { ascending: false })
 
 export const insertApplication = (data) =>
   supabase.from('applications').insert(data).select().single()
 
 export const updateApplication = (id, data) =>
-  supabase.from('applications').update(data).eq('id', id).select().single()
+  supabase.from('applications').update({ ...data, updated_at: new Date().toISOString() }).eq('id', id).select().single()
 
 export const deleteApplication = (id) =>
   supabase.from('applications').delete().eq('id', id)
@@ -33,8 +36,32 @@ export const deleteApplication = (id) =>
 export const getProfile = (userId) =>
   supabase.from('profiles').select('*').eq('id', userId).single()
 
+export const updateProfile = (userId, data) =>
+  supabase.from('profiles').update(data).eq('id', userId)
+
 export const getAllProfiles = () =>
-  supabase.from('profiles').select('id, name, avatar_url')
+  supabase.from('profiles').select('id, name, email')
+
+// Friends
+export const getFriends = async (userId) => {
+  const { data, error } = await supabase
+    .from('friend_requests')
+    .select('*, from_profile:profiles!friend_requests_from_user_id_fkey(id,name,email), to_profile:profiles!friend_requests_to_user_id_fkey(id,name,email)')
+    .or(`from_user_id.eq.${userId},to_user_id.eq.${userId}`)
+  return { data, error }
+}
+
+export const sendFriendRequest = (fromUserId, toUserId) =>
+  supabase.from('friend_requests').insert({ from_user_id: fromUserId, to_user_id: toUserId }).select().single()
+
+export const respondToRequest = (id, status) =>
+  supabase.from('friend_requests').update({ status }).eq('id', id)
+
+export const removeFriend = (id) =>
+  supabase.from('friend_requests').delete().eq('id', id)
+
+export const searchUsers = (query) =>
+  supabase.from('profiles').select('id, name, email').ilike('email', `%${query}%`).limit(5)
 
 // Docs
 export const getDocs = (userId) =>
@@ -46,15 +73,17 @@ export const insertDoc = (data) =>
 export const deleteDoc = (id) =>
   supabase.from('docs').delete().eq('id', id)
 
-// File storage
+// File storage with signed URLs
 export const uploadFile = async (userId, file) => {
-  const ext = file.name.split('.').pop()
   const path = `${userId}/${Date.now()}_${file.name}`
   const { data, error } = await supabase.storage.from('docs').upload(path, file)
   if (error) throw error
-  const { data: urlData } = supabase.storage.from('docs').getPublicUrl(path)
-  return { path, url: urlData.publicUrl }
+  const { data: signed } = await supabase.storage.from('docs').createSignedUrl(path, 60 * 60 * 24 * 365)
+  return { path, url: signed.signedUrl }
 }
+
+export const getSignedUrl = (path) =>
+  supabase.storage.from('docs').createSignedUrl(path, 60 * 60 * 24 * 365)
 
 export const deleteFile = (path) =>
   supabase.storage.from('docs').remove([path])

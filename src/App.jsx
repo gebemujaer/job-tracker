@@ -8,10 +8,18 @@ import TrackerPage from './pages/TrackerPage'
 import DocsPage from './pages/DocsPage'
 import GuidePage from './pages/GuidePage'
 import PartnerPage from './pages/PartnerPage'
+import FriendsPage from './pages/FriendsPage'
+import ProfilePage from './pages/ProfilePage'
+import ChangelogPage from './pages/ChangelogPage'
+import TermsPage from './pages/TermsPage'
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
-  if (loading) return <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', color:'var(--text-secondary)', fontFamily:'var(--font-mono)', fontSize:'13px' }}>loading...</div>
+  if (loading) return (
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', color:'var(--text-secondary)', fontFamily:'var(--font-mono)', fontSize:'13px' }}>
+      loading...
+    </div>
+  )
   if (!user) return <Navigate to="/auth" replace />
   return children
 }
@@ -25,8 +33,12 @@ function AppRoutes() {
         <Route index element={<DashboardPage />} />
         <Route path="tracker" element={<TrackerPage />} />
         <Route path="docs" element={<DocsPage />} />
-        <Route path="guide" element={<GuidePage />} />
+        <Route path="friends" element={<FriendsPage />} />
         <Route path="partner" element={<PartnerPage />} />
+        <Route path="profile" element={<ProfilePage />} />
+        <Route path="guide" element={<GuidePage />} />
+        <Route path="changelog" element={<ChangelogPage />} />
+        <Route path="terms" element={<TermsPage />} />
       </Route>
     </Routes>
   )
