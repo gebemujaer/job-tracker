@@ -38,11 +38,23 @@ export const updateProfile = (userId, data) =>
 
 // Friends
 export const getFriends = async (userId) => {
-  const { data, error } = await supabase
-    .from('friend_requests')
-    .select('*, from_profile:profiles!friend_requests_from_user_id_fkey(id,name,email), to_profile:profiles!friend_requests_to_user_id_fkey(id,name,email)')
-    .or(`from_user_id.eq.${userId},to_user_id.eq.${userId}`)
-  return { data, error }
+  try {
+    const { data, error } = await supabase
+      .from('friend_requests')
+      .select('*')
+      .or(`from_user_id.eq.${userId},to_user_id.eq.${userId}`)
+    if (error) return { data: [], error }
+    const enriched = await Promise.all((data || []).map(async (req) => {
+      const [from, to] = await Promise.all([
+        supabase.from('profiles').select('id,name,email').eq('id', req.from_user_id).single(),
+        supabase.from('profiles').select('id,name,email').eq('id', req.to_user_id).single(),
+      ])
+      return { ...req, from_profile: from.data || null, to_profile: to.data || null }
+    }))
+    return { data: enriched.filter(Boolean), error: null }
+  } catch(e) {
+    return { data: [], error: e }
+  }
 }
 
 export const sendFriendRequest = (fromUserId, toUserId) =>
