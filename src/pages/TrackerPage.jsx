@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useAuth } from '../lib/AuthContext'
-import { getApplications, insertApplication, updateApplication, deleteApplication, getDocsByCategory } from '../lib/supabase'
+import { getApplications, insertApplication, updateApplication, deleteApplication, supabase } from '../lib/supabase'
 import TagInput from '../components/TagInput'
 
 const STATUS_CONFIG = {
