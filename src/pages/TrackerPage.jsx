@@ -90,7 +90,7 @@ export default function TrackerPage() {
     if (!form.company?.trim() || !form.role?.trim()) return
     setSaving(true)
     try {
-      const payload = { ...form, tags: Array.isArray(form.tags) ? form.tags : [], fit_score_decimal: form.fit_score_decimal ? parseFloat(form.fit_score_decimal) : null, follow_up_date: form.follow_up_date || null, applied_date: form.applied_date || null, user_id: user.id }
+      const payload = { ...form, tags: Array.isArray(form.tags) ? form.tags : [], fit_score_decimal: form.fit_score_decimal ? parseFloat(form.fit_score_decimal) : null, follow_up_date: form.follow_up_date || null, applied_date: form.applied_date || null, remote_risk: form.remote_risk || null, user_id: user.id }
       if (editing) {
         const { data } = await updateApplication(editing.id, payload)
         if (data) setApps(prev => prev.map(a => a?.id === editing.id ? data : a))
