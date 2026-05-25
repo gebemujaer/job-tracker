@@ -130,14 +130,7 @@ export default function ChangelogPage() {
   const [useFallback, setUseFallback] = useState(false)
 
   useEffect(() => {
-    fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/releases`)
-      .then(r => { if (!r.ok) throw new Error(); return r.json() })
-      .then(data => {
-        if (data.length === 0) { setUseFallback(true) }
-        else { setReleases(data) }
-        setLoading(false)
-      })
-      .catch(() => { setUseFallback(true); setLoading(false) })
+    setLoading(false)
   }, [])
 
   const data = FALLBACK
@@ -175,37 +168,12 @@ export default function ChangelogPage() {
         </div>
       ))}
 
-      {!loading && !useFallback && releases.map((release, i) => {
-        const changes = parseBody(release.body)
-        return (
-          <div key={release.id} style={{ marginBottom: '2rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: '1rem', flexWrap: 'wrap' }}>
-              <h2 style={{ fontSize: 18, fontWeight: 500 }}>{release.tag_name}</h2>
-              {i === 0 && <span style={{ padding: '2px 10px', borderRadius: 20, fontSize: 11, fontWeight: 500, background: 'var(--accent-dim)', color: 'var(--accent)' }}>Latest</span>}
-              <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 'auto' }}>{formatDate(release.published_at)}</span>
-              <a href={release.html_url} target="_blank" rel="noopener" style={{ fontSize: 11, color: 'var(--text-muted)' }}>GitHub ↗</a>
-            </div>
-            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 14, overflow: 'hidden' }}>
-              {changes.length > 0 ? changes.map((c, ci) => {
-                const cfg = typeConfig[c.type] || typeConfig.new
-                return (
-                  <div key={ci} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '10px 16px', borderBottom: ci < changes.length - 1 ? '1px solid var(--border)' : 'none' }}>
-                    <span style={{ padding: '2px 8px', borderRadius: 20, fontSize: 10, fontWeight: 500, background: cfg.dim, color: cfg.color, flexShrink: 0, marginTop: 1 }}>{cfg.label}</span>
-                    <span style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5 }}>{c.text}</span>
-                  </div>
-                )
-              }) : (
-                <div style={{ padding: '1rem 1.25rem', fontSize: 13, color: 'var(--text-muted)', whiteSpace: 'pre-wrap' }}>{release.body || 'No release notes.'}</div>
-              )}
-            </div>
-          </div>
-        )
-      })}
+
 
       <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 14, padding: '1.25rem 1.5rem' }}>
         <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 6 }}>Coming up in v3</div>
         <div style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.7 }}>
-          Role-agnostic onboarding · 12+ role tag presets · Location context per user · AI-powered gap analysis · Email notifications · Interview prep notes · Mobile app
+          Role-agnostic onboarding · 12+ role presets (Engineering, Design, HR, Consulting, Accounting, Film, and more) · Location context per user · Friend request notifications · Empty state improvements · Mobile polish · AI-powered gap analysis · Interview prep notes
         </div>
       </div>
     </div>
