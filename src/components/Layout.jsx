@@ -44,7 +44,7 @@ export default function Layout() {
         {/* Logo */}
         <div style={{ padding: '0 1.25rem 1.5rem', borderBottom: '1px solid var(--border)' }}>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.1em', marginBottom: 4 }}>JOB TRACKER</div>
-          <div style={{ fontWeight: 500, fontSize: 15, color: 'var(--text)' }}>Gabriel & Partner</div>
+         <div style={{ fontWeight: 500, fontSize: 15, color: 'var(--text)' }}>{name}'s Tracker</div>
         </div>
 
         {/* Nav */}
