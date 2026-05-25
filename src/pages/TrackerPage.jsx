@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useAuth } from '../lib/AuthContext'
 import { getApplications, insertApplication, updateApplication, deleteApplication, getDocsByCategory } from '../lib/supabase'
+import TagInput from '../components/TagInput'
 
 const STATUS_CONFIG = {
   applied:   { label: 'Applied',   color: 'var(--info)',    dim: 'var(--info-dim)' },
@@ -51,7 +52,7 @@ function AppForm({ initial, onSave, onCancel, loading, userDocs }) {
   const handleSubmit = (e) => {
     e.preventDefault()
     if (!form.company.trim() || !form.role.trim()) return
-    const tagsArray = form.tags ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : []
+    const tagsArray = Array.isArray(form.tags) ? form.tags : (form.tags ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : [])
     onSave({ ...form, tags: tagsArray, fit_score_decimal: form.fit_score_decimal ? parseFloat(form.fit_score_decimal) : null })
   }
 
@@ -80,7 +81,9 @@ function AppForm({ initial, onSave, onCancel, loading, userDocs }) {
         </Field>
         <Field label="Job posting URL"><input type="url" value={form.job_url} onChange={e => set('job_url', e.target.value)} placeholder="https://..." style={inputCss} /></Field>
         <Field label="Contact (recruiter/HM)"><input value={form.contact} onChange={e => set('contact', e.target.value)} placeholder="Name or LinkedIn URL" style={inputCss} /></Field>
-        <Field label="Tags (comma separated)"><input value={form.tags} onChange={e => set('tags', e.target.value)} placeholder="e.g. dev-audience, no-salesNav, smb" style={inputCss} /></Field>
+        <div style={{ gridColumn: '1 / -1' }}>
+          <TagInput value={Array.isArray(form.tags) ? form.tags : (form.tags ? form.tags.split(',').map(t=>t.trim()).filter(Boolean) : [])} onChange={tags => set('tags', tags)} />
+        </div>
         <Field label="Resume used">
           <select value={form.resume_label} onChange={e => set('resume_label', e.target.value)} style={selectCss}>
             <option value="">None selected</option>

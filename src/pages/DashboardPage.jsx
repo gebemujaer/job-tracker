@@ -303,22 +303,51 @@ export default function DashboardPage() {
         </Section>
 
         {/* Tag analysis */}
-        <Section title="Gap / tag analysis">
+        <Section title="Gap / tag analysis" action={
+          <Link to="/tracker" style={{ fontSize: 11, color: 'var(--accent)' }}>+ Add tags →</Link>
+        }>
           {topTags.length === 0 ? (
-            <div style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', padding: '1.5rem 0' }}>Add tags to applications to see gap analysis</div>
-          ) : topTags.map(([tag, data]) => {
-            const rejRate = data.total > 0 ? Math.round((data.rejected / data.total) * 100) : 0
-            const intRate = data.total > 0 ? Math.round((data.interview / data.total) * 100) : 0
-            return (
-              <div key={tag} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0', borderBottom: '1px solid var(--border)' }}>
-                <span style={{ fontSize: 11, background: 'var(--accent-dim)', color: 'var(--accent)', padding: '2px 8px', borderRadius: 20, whiteSpace: 'nowrap', flexShrink: 0 }}>{tag}</span>
-                <Bar pct={(data.total / (topTags[0]?.[1]?.total || 1)) * 100} color={rejRate > 50 ? 'var(--danger)' : rejRate > 25 ? 'var(--warning)' : 'var(--accent)'} />
-                <span style={{ fontSize: 11, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{data.total}×</span>
-                {rejRate > 0 && <span style={{ fontSize: 10, color: 'var(--danger)', whiteSpace: 'nowrap' }}>{rejRate}% rej</span>}
-                {intRate > 0 && <span style={{ fontSize: 10, color: 'var(--accent)', whiteSpace: 'nowrap' }}>{intRate}% int</span>}
+            <div style={{ textAlign: 'center', padding: '1.5rem 0' }}>
+              <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 8 }}>No tags yet</div>
+              <div style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.6, maxWidth: 260, margin: '0 auto' }}>
+                Open an application → click the tag field → pick gaps like <span style={{ color: 'var(--accent)' }}>dev-audience</span> or <span style={{ color: 'var(--accent)' }}>no-salesNav</span>. After 3+ apps the analysis fills in.
               </div>
-            )
-          })}
+              <Link to="/tracker" style={{ display: 'inline-block', marginTop: 12, padding: '6px 14px', background: 'var(--accent-dim)', borderRadius: 8, fontSize: 12, color: 'var(--accent)' }}>
+                Go to Applications →
+              </Link>
+            </div>
+          ) : (
+            <>
+              <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 10, lineHeight: 1.5 }}>
+                Tags flagged across your applications — bar color shows rejection correlation
+              </div>
+              {topTags.map(([tag, data]) => {
+                const rejRate = data.total > 0 ? Math.round((data.rejected / data.total) * 100) : 0
+                const intRate = data.total > 0 ? Math.round((data.interview / data.total) * 100) : 0
+                const barColor = rejRate > 60 ? 'var(--danger)' : rejRate > 30 ? 'var(--warning)' : intRate > 30 ? 'var(--success)' : 'var(--accent)'
+                const companies = apps.filter(a => Array.isArray(a.tags) && a.tags.includes(tag)).map(a => a.company)
+                return (
+                  <div key={tag} style={{ padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                      <span style={{ fontSize: 11, background: rejRate > 60 ? 'var(--danger-dim)' : intRate > 30 ? 'var(--success-dim)' : 'var(--accent-dim)', color: rejRate > 60 ? 'var(--danger)' : intRate > 30 ? 'var(--success)' : 'var(--accent)', padding: '2px 8px', borderRadius: 20, whiteSpace: 'nowrap', flexShrink: 0 }}>{tag}</span>
+                      <Bar pct={(data.total / (topTags[0]?.[1]?.total || 1)) * 100} color={barColor} />
+                      <span style={{ fontSize: 11, color: 'var(--text-muted)', whiteSpace: 'nowrap', flexShrink: 0 }}>{data.total} app{data.total !== 1 ? 's' : ''}</span>
+                    </div>
+                    <div style={{ display: 'flex', gap: 10, paddingLeft: 4, flexWrap: 'wrap' }}>
+                      {rejRate > 0 && <span style={{ fontSize: 10, color: 'var(--danger)' }}>↓ {rejRate}% rejected/ghosted</span>}
+                      {intRate > 0 && <span style={{ fontSize: 10, color: 'var(--success)' }}>↑ {intRate}% interview</span>}
+                      <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{companies.slice(0,3).join(', ')}{companies.length > 3 ? ` +${companies.length-3}` : ''}</span>
+                    </div>
+                  </div>
+                )
+              })}
+              {topTags.length > 0 && (
+                <div style={{ paddingTop: 10, fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.6 }}>
+                  🔴 Red = high rejection rate · 🟡 Amber = some risk · 🟢 Green = correlates with interviews
+                </div>
+              )}
+            </>
+          )}
         </Section>
 
         {/* Resume performance */}
