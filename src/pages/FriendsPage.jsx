@@ -14,8 +14,10 @@ export default function FriendsPage() {
   useEffect(() => { if (user) load() }, [user])
 
   const load = async () => {
-    const { data } = await getFriends(user.id)
-    setFriends(data || [])
+    try {
+      const { data } = await getFriends(user.id)
+      setFriends((data || []).filter(f => f && f.status))
+    } catch(e) { setFriends([]) }
     setLoading(false)
   }
 
@@ -48,8 +50,8 @@ export default function FriendsPage() {
     load()
   }
 
-  const accepted = friends.filter(f => f.status === 'accepted')
-  const pending = friends.filter(f => f.status === 'pending')
+  const accepted = friends.filter(f => f && f.status === 'accepted')
+  const pending = friends.filter(f => f && f.status === 'pending')
   const incoming = pending.filter(f => f.to_user_id === user.id)
   const outgoing = pending.filter(f => f.from_user_id === user.id)
 
@@ -65,26 +67,23 @@ export default function FriendsPage() {
         <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 3 }}>Connect with friends to view each other's progress</p>
       </div>
 
-      {/* Search */}
       <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 14, padding: '1.5rem', marginBottom: '1.25rem' }}>
         <div style={{ fontSize: 13, fontWeight: 500, marginBottom: '1rem' }}>Add a friend by email</div>
         <form onSubmit={handleSearch} style={{ display: 'flex', gap: 8 }}>
-          <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search by email address…"
+          <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search by email address..."
             style={{ flex: 1, padding: '9px 12px', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border-strong)', borderRadius: 8, fontSize: 13, color: 'var(--text)', outline: 'none' }} />
           <button type="submit" disabled={searching} style={{ padding: '9px 18px', background: 'var(--accent)', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 500, color: 'var(--accent-text)', cursor: 'pointer' }}>
             {searching ? '...' : 'Search'}
           </button>
         </form>
-
         {msg && <div style={{ marginTop: 10, fontSize: 13, color: 'var(--success)' }}>{msg}</div>}
-
         {searchResults.length > 0 && (
           <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: 8 }}>
             {searchResults.map(u => {
               const alreadyFriend = friends.some(f => f.from_user_id === u.id || f.to_user_id === u.id)
               return (
                 <div key={u.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', background: 'var(--bg-hover)', borderRadius: 10 }}>
-                  <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--accent-dim)', border: '1px solid var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 500, color: 'var(--accent)', flexShrink: 0 }}>
+                  <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--accent-dim)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 500, color: 'var(--accent)' }}>
                     {getInitials(u.name)}
                   </div>
                   <div style={{ flex: 1 }}>
@@ -100,15 +99,11 @@ export default function FriendsPage() {
             })}
           </div>
         )}
-        {searchResults.length === 0 && searchQuery && !searching && (
-          <div style={{ marginTop: 10, fontSize: 13, color: 'var(--text-muted)' }}>No users found. Make sure they've signed up first.</div>
-        )}
       </div>
 
-      {/* Incoming requests */}
       {incoming.length > 0 && (
         <div style={{ background: 'var(--bg-card)', border: '1px solid rgba(212,245,122,0.2)', borderRadius: 14, padding: '1.5rem', marginBottom: '1.25rem' }}>
-          <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--accent)', marginBottom: '1rem' }}>⚡ {incoming.length} pending request{incoming.length > 1 ? 's' : ''}</div>
+          <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--accent)', marginBottom: '1rem' }}>Pending requests ({incoming.length})</div>
           {incoming.map(f => {
             const p = f.from_profile
             return (
@@ -128,13 +123,10 @@ export default function FriendsPage() {
         </div>
       )}
 
-      {/* Connected friends */}
       <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 14, padding: '1.5rem' }}>
         <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '1rem', letterSpacing: '0.04em' }}>CONNECTED ({accepted.length})</div>
         {accepted.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)', fontSize: 13 }}>
-            No friends connected yet. Search by email to add someone.
-          </div>
+          <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)', fontSize: 13 }}>No friends connected yet.</div>
         ) : accepted.map(f => {
           const p = getFriendProfile(f)
           return (
@@ -144,33 +136,10 @@ export default function FriendsPage() {
                 <div style={{ fontSize: 14, fontWeight: 500 }}>{p?.name || 'Unknown'}</div>
                 <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{p?.email}</div>
               </div>
-              <button onClick={() => handleRemove(f.id)} style={{ padding: '5px 12px', background: 'transparent', border: '1px solid var(--border)', borderRadius: 7, fontSize: 12, color: 'var(--text-muted)', cursor: 'pointer' }}
-                onMouseOver={e => { e.currentTarget.style.borderColor = 'var(--danger)'; e.currentTarget.style.color = 'var(--danger)' }}
-                onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-muted)' }}>
-                Remove
-              </button>
+              <button onClick={() => handleRemove(f.id)} style={{ padding: '5px 12px', background: 'transparent', border: '1px solid var(--border)', borderRadius: 7, fontSize: 12, color: 'var(--text-muted)', cursor: 'pointer' }}>Remove</button>
             </div>
           )
         })}
-
-        {outgoing.length > 0 && (
-          <>
-            <div style={{ fontSize: 12, color: 'var(--text-muted)', margin: '1rem 0 8px', letterSpacing: '0.04em' }}>PENDING SENT</div>
-            {outgoing.map(f => {
-              const p = f.to_profile
-              return (
-                <div key={f.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0' }}>
-                  <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--bg-hover)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: 'var(--text-muted)' }}>{getInitials(p?.name)}</div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 14, color: 'var(--text-secondary)' }}>{p?.name || p?.email}</div>
-                    <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Request pending</div>
-                  </div>
-                  <button onClick={() => handleRemove(f.id)} style={{ padding: '5px 12px', background: 'transparent', border: '1px solid var(--border)', borderRadius: 7, fontSize: 12, color: 'var(--text-muted)', cursor: 'pointer' }}>Cancel</button>
-                </div>
-              )
-            })}
-          </>
-        )}
       </div>
     </div>
   )

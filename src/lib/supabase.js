@@ -7,7 +7,6 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: { persistSession: true, storageKey: 'job-tracker-auth' }
 })
 
-// Auth
 export const signUp = (email, password, name) =>
   supabase.auth.signUp({ email, password, options: { data: { name } } })
 
@@ -16,7 +15,6 @@ export const signIn = (email, password) =>
 
 export const signOut = () => supabase.auth.signOut()
 
-// Applications
 export const getApplications = (userId) =>
   supabase.from('applications').select('*').eq('user_id', userId).order('created_at', { ascending: false })
 
@@ -29,14 +27,12 @@ export const updateApplication = (id, data) =>
 export const deleteApplication = (id) =>
   supabase.from('applications').delete().eq('id', id)
 
-// Profiles
 export const getProfile = (userId) =>
   supabase.from('profiles').select('*').eq('id', userId).single()
 
 export const updateProfile = (userId, data) =>
   supabase.from('profiles').update(data).eq('id', userId)
 
-// Friends
 export const getFriends = async (userId) => {
   try {
     const { data, error } = await supabase
@@ -69,7 +65,6 @@ export const removeFriend = (id) =>
 export const searchUsers = (query) =>
   supabase.from('profiles').select('id, name, email').ilike('email', `%${query}%`).limit(5)
 
-// Docs
 export const getDocs = (userId) =>
   supabase.from('docs').select('*').eq('user_id', userId).order('created_at', { ascending: false })
 
@@ -79,7 +74,6 @@ export const insertDoc = (data) =>
 export const deleteDoc = (id) =>
   supabase.from('docs').delete().eq('id', id)
 
-// File storage
 export const uploadFile = async (userId, file) => {
   const path = `${userId}/${Date.now()}_${file.name}`
   const { error } = await supabase.storage.from('docs').upload(path, file)
@@ -90,7 +84,3 @@ export const uploadFile = async (userId, file) => {
 
 export const deleteFile = (path) =>
   supabase.storage.from('docs').remove([path])
-
-// Get docs for dropdown in application form
-export const getDocsByCategory = (userId, categories) =>
-  supabase.from('docs').select('id, label, file_name, category').eq('user_id', userId).in('category', categories).order('created_at', { ascending: false })
