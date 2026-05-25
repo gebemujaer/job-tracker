@@ -1,6 +1,7 @@
 import React from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './lib/AuthContext'
+import ErrorBoundary from './components/ErrorBoundary'
 import Layout from './components/Layout'
 import AuthPage from './pages/AuthPage'
 import DashboardPage from './pages/DashboardPage'
@@ -30,15 +31,15 @@ function AppRoutes() {
     <Routes>
       <Route path="/auth" element={user ? <Navigate to="/" replace /> : <AuthPage />} />
       <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-        <Route index element={<DashboardPage />} />
-        <Route path="tracker" element={<TrackerPage />} />
-        <Route path="docs" element={<DocsPage />} />
-        <Route path="friends" element={<FriendsPage />} />
-        <Route path="partner" element={<PartnerPage />} />
-        <Route path="profile" element={<ProfilePage />} />
-        <Route path="guide" element={<GuidePage />} />
-        <Route path="changelog" element={<ChangelogPage />} />
-        <Route path="terms" element={<TermsPage />} />
+        <Route index element={<ErrorBoundary><DashboardPage /></ErrorBoundary>} />
+        <Route path="tracker" element={<ErrorBoundary><TrackerPage /></ErrorBoundary>} />
+        <Route path="docs" element={<ErrorBoundary><DocsPage /></ErrorBoundary>} />
+        <Route path="friends" element={<ErrorBoundary><FriendsPage /></ErrorBoundary>} />
+        <Route path="partner" element={<ErrorBoundary><PartnerPage /></ErrorBoundary>} />
+        <Route path="profile" element={<ErrorBoundary><ProfilePage /></ErrorBoundary>} />
+        <Route path="guide" element={<ErrorBoundary><GuidePage /></ErrorBoundary>} />
+        <Route path="changelog" element={<ErrorBoundary><ChangelogPage /></ErrorBoundary>} />
+        <Route path="terms" element={<ErrorBoundary><TermsPage /></ErrorBoundary>} />
       </Route>
     </Routes>
   )
@@ -47,7 +48,9 @@ function AppRoutes() {
 export default function App() {
   return (
     <AuthProvider>
-      <AppRoutes />
+      <ErrorBoundary>
+        <AppRoutes />
+      </ErrorBoundary>
     </AuthProvider>
   )
 }
