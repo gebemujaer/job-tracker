@@ -140,7 +140,7 @@ export default function ChangelogPage() {
       .catch(() => { setUseFallback(true); setLoading(false) })
   }, [])
 
-  const data = useFallback ? FALLBACK : releases
+  const data = FALLBACK
 
   return (
     <div style={{ maxWidth: 680, margin: '0 auto' }}>
