@@ -22,7 +22,7 @@ export const insertApplication = (data) =>
   supabase.from('applications').insert(data).select().single()
 
 export const updateApplication = (id, data) =>
-  supabase.from('applications').update({ ...data, updated_at: new Date().toISOString() }).eq('id', id).select().single()
+  supabase.from('applications').update(data).eq('id', id).select().single()
 
 export const deleteApplication = (id) =>
   supabase.from('applications').delete().eq('id', id)
