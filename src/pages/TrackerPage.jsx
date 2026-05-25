@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useAuth } from '../lib/AuthContext'
-import { getApplications, insertApplication, updateApplication, deleteApplication } from '../lib/supabase'
+import { getApplications, insertApplication, updateApplication, deleteApplication, getDocsByCategory } from '../lib/supabase'
 
 const STATUS_CONFIG = {
   applied:   { label: 'Applied',   color: 'var(--info)',    dim: 'var(--info-dim)' },
@@ -24,7 +24,7 @@ const EMPTY_FORM = {
   applied_date: new Date().toISOString().split('T')[0],
   follow_up_date: '', status: 'applied',
   fit_score_decimal: '', pay_range: '', remote_risk: '',
-  notes: '', tags: '', job_url: '', contact: ''
+  notes: '', tags: '', job_url: '', contact: '', resume_label: '', cover_letter_label: ''
 }
 
 function Field({ label, children }) {
@@ -39,7 +39,7 @@ function Field({ label, children }) {
 const inputCss = { width: '100%', padding: '9px 12px', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border-strong)', borderRadius: 8, fontSize: 13, color: 'var(--text)', outline: 'none' }
 const selectCss = { width: '100%', padding: '9px 12px', background: 'var(--bg)', border: '1px solid var(--border-strong)', borderRadius: 8, fontSize: 13, color: 'var(--text)', outline: 'none' }
 
-function AppForm({ initial, onSave, onCancel, loading }) {
+function AppForm({ initial, onSave, onCancel, loading, userDocs }) {
   const [form, setForm] = useState(initial ? {
     ...initial,
     tags: Array.isArray(initial.tags) ? initial.tags.join(', ') : (initial.tags || ''),
@@ -81,6 +81,18 @@ function AppForm({ initial, onSave, onCancel, loading }) {
         <Field label="Job posting URL"><input type="url" value={form.job_url} onChange={e => set('job_url', e.target.value)} placeholder="https://..." style={inputCss} /></Field>
         <Field label="Contact (recruiter/HM)"><input value={form.contact} onChange={e => set('contact', e.target.value)} placeholder="Name or LinkedIn URL" style={inputCss} /></Field>
         <Field label="Tags (comma separated)"><input value={form.tags} onChange={e => set('tags', e.target.value)} placeholder="e.g. dev-audience, no-salesNav, smb" style={inputCss} /></Field>
+        <Field label="Resume used">
+          <select value={form.resume_label} onChange={e => set('resume_label', e.target.value)} style={selectCss}>
+            <option value="">None selected</option>
+            {(userDocs || []).filter(d => d.category === 'Resume').map(d => <option key={d.id} value={d.label || d.file_name}>{d.label || d.file_name}</option>)}
+          </select>
+        </Field>
+        <Field label="Cover letter used">
+          <select value={form.cover_letter_label} onChange={e => set('cover_letter_label', e.target.value)} style={selectCss}>
+            <option value="">None selected</option>
+            {(userDocs || []).filter(d => d.category === 'Cover Letter').map(d => <option key={d.id} value={d.label || d.file_name}>{d.label || d.file_name}</option>)}
+          </select>
+        </Field>
       </div>
       <Field label="Notes / gaps / next steps">
         <textarea value={form.notes} onChange={e => set('notes', e.target.value)} placeholder="Key gaps, follow-up actions, referrals..." style={{ ...inputCss, minHeight: 80, resize: 'vertical' }} />
@@ -157,8 +169,14 @@ export default function TrackerPage() {
   const [sortBy, setSortBy] = useState('created_at_desc')
   const [noteModal, setNoteModal] = useState(null)
   const [exportMsg, setExportMsg] = useState('')
+  const [userDocs, setUserDocs] = useState([])
 
-  useEffect(() => { if (user) load() }, [user])
+  useEffect(() => {
+    if (user) {
+      load()
+      getDocsByCategory(user.id, ['Resume', 'Cover Letter']).then(({ data }) => setUserDocs(data || []))
+    }
+  }, [user])
 
   const load = async () => {
     const { data } = await getApplications(user.id)
@@ -283,7 +301,7 @@ export default function TrackerPage() {
       {showForm && (
         <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 14, padding: '1.5rem', marginBottom: '1.5rem' }}>
           <div style={{ fontSize: 14, fontWeight: 500, marginBottom: '1.25rem' }}>{editing ? 'Edit application' : 'New application'}</div>
-          <AppForm initial={editing || undefined} onSave={handleSave} onCancel={() => { setShowForm(false); setEditing(null) }} loading={saving} />
+          <AppForm initial={editing || undefined} onSave={handleSave} onCancel={() => { setShowForm(false); setEditing(null) }} loading={saving} userDocs={userDocs} />
         </div>
       )}
 

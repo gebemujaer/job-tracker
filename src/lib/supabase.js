@@ -11,16 +11,13 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
 export const signUp = (email, password, name) =>
   supabase.auth.signUp({ email, password, options: { data: { name } } })
 
-export const signIn = (email, password, remember) =>
+export const signIn = (email, password) =>
   supabase.auth.signInWithPassword({ email, password })
 
 export const signOut = () => supabase.auth.signOut()
 
 // Applications
 export const getApplications = (userId) =>
-  supabase.from('applications').select('*').eq('user_id', userId).order('created_at', { ascending: false })
-
-export const getPartnerApplications = (userId) =>
   supabase.from('applications').select('*').eq('user_id', userId).order('created_at', { ascending: false })
 
 export const insertApplication = (data) =>
@@ -38,9 +35,6 @@ export const getProfile = (userId) =>
 
 export const updateProfile = (userId, data) =>
   supabase.from('profiles').update(data).eq('id', userId)
-
-export const getAllProfiles = () =>
-  supabase.from('profiles').select('id, name, email')
 
 // Friends
 export const getFriends = async (userId) => {
@@ -73,17 +67,18 @@ export const insertDoc = (data) =>
 export const deleteDoc = (id) =>
   supabase.from('docs').delete().eq('id', id)
 
-// File storage with signed URLs
+// File storage
 export const uploadFile = async (userId, file) => {
   const path = `${userId}/${Date.now()}_${file.name}`
-  const { data, error } = await supabase.storage.from('docs').upload(path, file)
+  const { error } = await supabase.storage.from('docs').upload(path, file)
   if (error) throw error
   const { data: signed } = await supabase.storage.from('docs').createSignedUrl(path, 60 * 60 * 24 * 365)
   return { path, url: signed.signedUrl }
 }
 
-export const getSignedUrl = (path) =>
-  supabase.storage.from('docs').createSignedUrl(path, 60 * 60 * 24 * 365)
-
 export const deleteFile = (path) =>
   supabase.storage.from('docs').remove([path])
+
+// Get docs for dropdown in application form
+export const getDocsByCategory = (userId, categories) =>
+  supabase.from('docs').select('id, label, file_name, category').eq('user_id', userId).in('category', categories).order('created_at', { ascending: false })

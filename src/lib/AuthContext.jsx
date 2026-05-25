@@ -11,27 +11,43 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null)
-      if (session?.user) fetchProfile(session.user.id)
+      if (session?.user) fetchProfile(session.user)
       else setLoading(false)
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
-      if (session?.user) fetchProfile(session.user.id)
+      if (session?.user) fetchProfile(session.user)
       else { setProfile(null); setLoading(false) }
     })
 
     return () => subscription.unsubscribe()
   }, [])
 
-  const fetchProfile = async (userId) => {
-    const { data } = await supabase.from('profiles').select('*').eq('id', userId).single()
+  const fetchProfile = async (user) => {
+    let { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+    
+    // If no profile exists, create one from auth metadata
+    if (!data) {
+      const name = user.user_metadata?.name || user.email?.split('@')[0] || 'User'
+      const { data: newProfile } = await supabase
+        .from('profiles')
+        .upsert({ id: user.id, name, email: user.email })
+        .select()
+        .single()
+      data = newProfile
+    }
+    
     setProfile(data)
     setLoading(false)
   }
 
+  const refetchProfile = async () => {
+    if (user) await fetchProfile(user)
+  }
+
   return (
-    <AuthContext.Provider value={{ user, profile, loading, refetchProfile: () => user && fetchProfile(user.id) }}>
+    <AuthContext.Provider value={{ user, profile, loading, refetchProfile }}>
       {children}
     </AuthContext.Provider>
   )
