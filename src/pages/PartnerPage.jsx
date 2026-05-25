@@ -24,7 +24,7 @@ export default function PartnerPage() {
   useEffect(() => {
     if (!user) return
     getFriends(user.id).then(({ data }) => {
-      const accepted = (data || []).filter(f => f.status === 'accepted')
+      const accepted = (data || []).filter(f => f && f.status === 'accepted')
       setFriends(accepted)
       setLoading(false)
     })

@@ -18,14 +18,11 @@ export const signOut = () => supabase.auth.signOut()
 export const getApplications = (userId) =>
   supabase.from('applications').select('*').eq('user_id', userId).order('created_at', { ascending: false })
 
-export const insertApplication = (data) => {
-  const allowed = ['user_id','company','role','location','applied_date','follow_up_date','status','fit_score','fit_score_decimal','pay_range','remote_risk','notes','tags','job_url','contact','resume_label','cover_letter_label']
-  const clean = Object.fromEntries(Object.entries(data).filter(([k]) => allowed.includes(k)))
-  return supabase.from('applications').insert(clean).select().single()
-}
+export const insertApplication = (data) =>
+  supabase.from('applications').insert(data).select().single()
 
 export const updateApplication = (id, data) =>
-  supabase.from('applications').update(data).eq('id', id).select().single()
+  supabase.from('applications').update({ ...data, updated_at: new Date().toISOString() }).eq('id', id).select().single()
 
 export const deleteApplication = (id) =>
   supabase.from('applications').delete().eq('id', id)
