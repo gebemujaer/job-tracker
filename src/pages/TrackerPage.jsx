@@ -97,7 +97,7 @@ function StatusDropdown({ current, onChange }) {
 }
 
 export default function TrackerPage() {
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const [apps, setApps] = useState([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -284,7 +284,7 @@ export default function TrackerPage() {
               <div><label style={lStyle}>Resume used</label><select value={form.resume_label} onChange={e => set('resume_label', e.target.value)} style={sStyle}><option value="">None</option>{resumes.map(d => <option key={d.id} value={d.label||d.file_name}>{d.label||d.file_name}</option>)}</select></div>
               <div><label style={lStyle}>Cover letter used</label><select value={form.cover_letter_label} onChange={e => set('cover_letter_label', e.target.value)} style={sStyle}><option value="">None</option>{covers.map(d => <option key={d.id} value={d.label||d.file_name}>{d.label||d.file_name}</option>)}</select></div>
             </div>
-            <TagInput value={form.tags} onChange={tags => set('tags', tags)} pastTags={pastTags} />
+            <TagInput value={form.tags} onChange={tags => set('tags', tags)} pastTags={pastTags} userRole={profile?.job_role} />
             <div><label style={lStyle}>Notes</label><textarea value={form.notes} onChange={e => set('notes', e.target.value)} placeholder="Key gaps, follow-up actions..." style={{ ...iStyle, minHeight: 72, resize: 'vertical' }} /></div>
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
               <button type="button" onClick={() => { setShowForm(false); setEditing(null) }} style={{ padding: '9px 20px', background: 'transparent', border: '1px solid var(--border-strong)', borderRadius: 8, fontSize: 13, color: 'var(--text-secondary)', cursor: 'pointer' }}>Cancel</button>

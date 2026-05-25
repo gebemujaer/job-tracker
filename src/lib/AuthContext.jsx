@@ -26,18 +26,14 @@ export function AuthProvider({ children }) {
 
   const fetchProfile = async (user) => {
     let { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
-    
-    // If no profile exists, create one from auth metadata
     if (!data) {
       const name = user.user_metadata?.name || user.email?.split('@')[0] || 'User'
       const { data: newProfile } = await supabase
         .from('profiles')
-        .upsert({ id: user.id, name, email: user.email })
-        .select()
-        .single()
+        .upsert({ id: user.id, name, email: user.email, onboarded: false })
+        .select().single()
       data = newProfile
     }
-    
     setProfile(data)
     setLoading(false)
   }

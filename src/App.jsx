@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './lib/AuthContext'
 import ErrorBoundary from './components/ErrorBoundary'
 import Layout from './components/Layout'
 import AuthPage from './pages/AuthPage'
+import OnboardingPage from './pages/OnboardingPage'
 import DashboardPage from './pages/DashboardPage'
 import TrackerPage from './pages/TrackerPage'
 import DocsPage from './pages/DocsPage'
@@ -15,13 +16,17 @@ import ChangelogPage from './pages/ChangelogPage'
 import TermsPage from './pages/TermsPage'
 
 function ProtectedRoute({ children }) {
-  const { user, loading } = useAuth()
+  const { user, profile, loading } = useAuth()
   if (loading) return (
     <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', color:'var(--text-secondary)', fontFamily:'var(--font-mono)', fontSize:'13px' }}>
       loading...
     </div>
   )
   if (!user) return <Navigate to="/auth" replace />
+  // Redirect to onboarding if not yet completed
+  if (profile && profile.onboarded === false && window.location.pathname !== '/onboarding') {
+    return <Navigate to="/onboarding" replace />
+  }
   return children
 }
 
@@ -30,6 +35,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/auth" element={user ? <Navigate to="/" replace /> : <AuthPage />} />
+      <Route path="/onboarding" element={user ? <ErrorBoundary><OnboardingPage /></ErrorBoundary> : <Navigate to="/auth" replace />} />
       <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         <Route index element={<ErrorBoundary><DashboardPage /></ErrorBoundary>} />
         <Route path="tracker" element={<ErrorBoundary><TrackerPage /></ErrorBoundary>} />
